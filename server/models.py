@@ -11,7 +11,19 @@ class Author(db.Model):
     created_at = db.Column(db.DateTime, server_default=db.func.now())
     updated_at = db.Column(db.DateTime, onupdate=db.func.now())
 
-    # Add validators 
+    # Add validators
+    @validates('name')
+    def validate_name(self, key, author):
+        existing_author = Author.query.filter(Author.name == author).first()
+        if not author or existing_author:
+            raise ValueError('Author must have a unique name')
+        return author
+    
+    @validates('phone_number')
+    def validate_phone_number(self, key, number):
+        if len(number) != 10 or not number.isdigit():
+            raise ValueError('Phone Number must be ten digits long')
+        return number
 
     def __repr__(self):
         return f'Author(id={self.id}, name={self.name})'
@@ -28,7 +40,30 @@ class Post(db.Model):
     updated_at = db.Column(db.DateTime, onupdate=db.func.now())
 
     # Add validators  
-
-
+    @validates('content')
+    def validate_content(self, key, content):
+        if len(content) < 250:
+            raise ValueError('Content must be at least 250 characters long')
+        return content
+    
+    @validates('summary')
+    def validate_summary(self, key, summary):
+        if len(summary) > 250:
+            raise ValueError('Summary cannot be longer than 250 characters')
+        return summary
+    
+    @validates('category')
+    def validate_category(self, key, category):
+        if category != 'Fiction' and category != 'Non-Fiction':
+            raise ValueError('Category must be Fiction or Non-Fiction')
+        return category
+    
+    @validates('title')
+    def validate_title(self, key, title):
+        clickbait_strings = ["Won't Believe", "Secret", "Top", "Guess"]
+        if not any(substring in title for substring in clickbait_strings):
+            raise ValueError("No clickbait found")
+        return title
+    
     def __repr__(self):
         return f'Post(id={self.id}, title={self.title} content={self.content}, summary={self.summary})'
